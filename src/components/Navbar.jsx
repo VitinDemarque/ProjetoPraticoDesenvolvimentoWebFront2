@@ -1,11 +1,12 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { clearUser, getUser } from '../services/storage'
+import { clearUser, clearToken, getUser } from '../services/storage'
 
 export default function Navbar() {
   const navigate = useNavigate()
   const user = getUser()
 
   const logout = () => {
+    clearToken()
     clearUser()
     navigate('/login')
   }

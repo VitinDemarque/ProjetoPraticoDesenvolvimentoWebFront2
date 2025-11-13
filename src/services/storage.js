@@ -1,5 +1,6 @@
 const USER_KEY = 'devforum_user'
 const POSTS_KEY = 'devforum_posts'
+const TOKEN_KEY = 'devforum_token'
 
 export function getUser() {
   try {
@@ -16,6 +17,22 @@ export function setUser(user) {
 
 export function clearUser() {
   localStorage.removeItem(USER_KEY)
+}
+
+export function getToken() {
+  try {
+    return localStorage.getItem(TOKEN_KEY)
+  } catch {
+    return null
+  }
+}
+
+export function setToken(token) {
+  localStorage.setItem(TOKEN_KEY, token)
+}
+
+export function clearToken() {
+  localStorage.removeItem(TOKEN_KEY)
 }
 
 export function getPosts() {

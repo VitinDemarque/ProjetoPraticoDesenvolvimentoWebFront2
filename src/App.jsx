@@ -5,10 +5,10 @@ import Signup from './pages/Signup'
 import Feed from './pages/Feed'
 import NewPost from './pages/NewPost'
 import ProtectedRoute from './routes/ProtectedRoute'
-import { getUser } from './services/storage'
+import { getToken } from './services/storage'
 
 function App() {
-  const user = getUser()
+  const token = getToken()
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -35,7 +35,7 @@ function App() {
           />
           <Route
             path="/"
-            element={<Navigate to={user ? '/feed' : '/login'} replace />}
+            element={<Navigate to={token ? '/feed' : '/login'} replace />}
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

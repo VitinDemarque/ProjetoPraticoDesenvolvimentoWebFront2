@@ -1,22 +1,23 @@
-import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { getUser, setUser } from '../services/storage'
+import { useForm } from 'react-hook-form'
+import { setUser, setToken } from '../services/storage'
+import { loginApi } from '../services/api'
 
 export default function Login() {
   const navigate = useNavigate()
-  const existing = getUser()
-  const [email, setEmail] = useState(existing?.email || '')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
+    defaultValues: { email: '', password: '' },
+  })
 
-  const submit = (e) => {
-    e.preventDefault()
-    if (!email || !password) {
-      setError('Informe e-mail e senha.')
-      return
+  const onSubmit = async (data) => {
+    try {
+      const { token, user } = await loginApi(data)
+      setToken(token)
+      setUser(user)
+      navigate('/feed')
+    } catch (err) {
+      alert(err.message || 'Falha no login')
     }
-    setUser({ email, name: email.split('@')[0] })
-    navigate('/feed')
   }
 
   return (
@@ -25,33 +26,33 @@ export default function Login() {
         <h1 className="text-3xl font-bold text-gray-900">Entrar</h1>
         <p className="text-sm text-gray-600 mt-1">Bem-vindo ao DevForum</p>
       </div>
-      <form onSubmit={submit} className="mt-6 space-y-4">
-        {error && <div className="text-sm text-red-600">{error}</div>}
+      <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700">E-mail</label>
           <input
             type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            {...register('email', { required: 'Informe o e-mail', pattern: { value: /.+@.+\..+/, message: 'E-mail inválido' } })}
             className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
             placeholder="seu@email.com"
           />
+          {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email.message}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">Senha</label>
           <input
             type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            {...register('password', { required: 'Informe a senha', minLength: { value: 6, message: 'Mínimo de 6 caracteres' } })}
             className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
             placeholder="••••••••"
           />
+          {errors.password && <p className="text-xs text-red-600 mt-1">{errors.password.message}</p>}
         </div>
         <button
           type="submit"
-          className="w-full rounded-md bg-blue-600 text-white py-2 hover:bg-blue-700 transition-colors"
+          disabled={isSubmitting}
+          className="w-full rounded-md bg-blue-600 text-white py-2 hover:bg-blue-700 transition-colors disabled:opacity-60"
         >
-          Entrar
+          {isSubmitting ? 'Entrando...' : 'Entrar'}
         </button>
         <p className="text-sm text-gray-600 text-center">
           Não tem conta?{' '}
