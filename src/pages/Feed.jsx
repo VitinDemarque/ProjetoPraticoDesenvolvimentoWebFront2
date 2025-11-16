@@ -24,8 +24,10 @@ export default function Feed() {
   })
 
   useEffect(() => {
-    loadPosts()
-  }, [loadPosts])
+    if (!posts || posts.length === 0) {
+      loadPosts()
+    }
+  }, [loadPosts, posts])
 
   // Posts são atualizados automaticamente pelo contexto.
 

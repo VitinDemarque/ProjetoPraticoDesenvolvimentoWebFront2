@@ -30,12 +30,14 @@ export default function PostDetails() {
   useEffect(() => {
     ;(async () => {
       try {
-        await loadPostById(id)
+        if (!currentPost || String(currentPost.id) !== String(id)) {
+          await loadPostById(id)
+        }
       } catch (err) {
         setError(err.message || 'Falha ao carregar post')
       }
     })()
-  }, [id, loadPostById])
+  }, [id, loadPostById, currentPost])
 
   const onAddComment = handleSubmit
 

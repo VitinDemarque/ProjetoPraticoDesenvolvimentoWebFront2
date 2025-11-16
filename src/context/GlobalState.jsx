@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState } from 'react'
+import { createContext, useContext, useMemo, useState, useCallback } from 'react'
 import { fetchPostsApi, createPostApi, fetchPostByIdApi, addCommentApi } from '../services/api'
 import { toggleVote as toggleVoteStorage } from '../services/storage'
 
@@ -12,7 +12,7 @@ export function GlobalStateProvider({ children }) {
   const [creatingPost, setCreatingPost] = useState(false)
   const [addingComment, setAddingComment] = useState(false)
 
-  async function loadPosts() {
+  const loadPosts = useCallback(async () => {
     setLoadingPosts(true)
     try {
       const data = await fetchPostsApi()
@@ -20,9 +20,9 @@ export function GlobalStateProvider({ children }) {
     } finally {
       setLoadingPosts(false)
     }
-  }
+  }, [])
 
-  async function loadPostById(id) {
+  const loadPostById = useCallback(async (id) => {
     setLoadingPost(true)
     try {
       const data = await fetchPostByIdApi(id)
@@ -30,9 +30,9 @@ export function GlobalStateProvider({ children }) {
     } finally {
       setLoadingPost(false)
     }
-  }
+  }, [])
 
-  async function createPost({ title, content, author }) {
+  const createPost = useCallback(async ({ title, content, author }) => {
     setCreatingPost(true)
     try {
       const newPost = await createPostApi({ title, content, author })
@@ -41,9 +41,9 @@ export function GlobalStateProvider({ children }) {
     } finally {
       setCreatingPost(false)
     }
-  }
+  }, [])
 
-  async function addComment({ postId, author, content }) {
+  const addComment = useCallback(async ({ postId, author, content }) => {
     setAddingComment(true)
     try {
       const updated = await addCommentApi({ postId, author, content })
@@ -53,14 +53,14 @@ export function GlobalStateProvider({ children }) {
     } finally {
       setAddingComment(false)
     }
-  }
+  }, [])
 
-  function toggleVote(postId, userId, type) {
+  const toggleVote = useCallback((postId, userId, type) => {
     const updated = toggleVoteStorage(postId, userId, type)
     setPosts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
     setCurrentPost((prev) => (prev && prev.id === updated.id ? updated : prev))
     return updated
-  }
+  }, [])
 
   const value = useMemo(
     () => ({
