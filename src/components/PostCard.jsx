@@ -1,4 +1,5 @@
 import { toggleVote } from '../services/storage'
+import { Link } from 'react-router-dom'
 
 export default function PostCard({ post, currentUser, onChange }) {
   const onLike = () => {
@@ -13,7 +14,11 @@ export default function PostCard({ post, currentUser, onChange }) {
 
   return (
     <article className="bg-white border rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
-      <h3 className="text-lg font-semibold text-gray-900">{post.title}</h3>
+      <h3 className="text-lg font-semibold text-gray-900">
+        <Link to={`/post/${post.id}`} className="hover:underline">
+          {post.title}
+        </Link>
+      </h3>
       <p className="mt-2 text-gray-700 whitespace-pre-line">{post.content}</p>
       <div className="mt-4 flex items-center justify-between">
         <span className="text-sm text-gray-500">por {post.author}</span>

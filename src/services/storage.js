@@ -61,6 +61,14 @@ export function ensureSeedPosts() {
       dislikes: 0,
       likedBy: ['devforum@demo'],
       dislikedBy: [],
+      comments: [
+        {
+          id: crypto.randomUUID(),
+          author: 'devforum',
+          content: 'Este é um comentário de exemplo. Use o formulário para adicionar o seu!',
+          createdAt: Date.now(),
+        },
+      ],
       createdAt: Date.now(),
     },
   ]
@@ -84,6 +92,28 @@ export function addPost({ title, content, author }) {
   const updated = [newPost, ...posts]
   savePosts(updated)
   return newPost
+}
+
+export function getPostById(postId) {
+  const posts = getPosts()
+  return posts.find((p) => p.id === postId) || null
+}
+
+export function addComment(postId, { author, content }) {
+  const posts = getPosts()
+  const updated = posts.map((p) => {
+    if (p.id !== postId) return p
+    const comment = {
+      id: crypto.randomUUID(),
+      author,
+      content,
+      createdAt: Date.now(),
+    }
+    const comments = Array.isArray(p.comments) ? p.comments : []
+    return { ...p, comments: [comment, ...comments] }
+  })
+  savePosts(updated)
+  return updated.find((p) => p.id === postId)
 }
 
 export function toggleVote(postId, userId, type) {

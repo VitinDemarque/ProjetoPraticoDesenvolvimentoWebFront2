@@ -4,6 +4,7 @@ import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Feed from './pages/Feed'
 import NewPost from './pages/NewPost'
+import PostDetails from './pages/PostDetails'
 import ProtectedRoute from './routes/ProtectedRoute'
 import { getToken } from './services/storage'
 
@@ -30,6 +31,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <NewPost />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/post/:id"
+            element={
+              <ProtectedRoute>
+                <PostDetails />
               </ProtectedRoute>
             }
           />

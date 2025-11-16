@@ -30,7 +30,7 @@ export async function signupApi({ name, email, password }) {
 }
 
 // -------- Posts API (mock) --------
-import { ensureSeedPosts, addPost } from './storage'
+import { ensureSeedPosts, addPost, getPostById, addComment } from './storage'
 
 export async function fetchPostsApi() {
   await new Promise((r) => setTimeout(r, 400))
@@ -45,4 +45,25 @@ export async function createPostApi({ title, content, author }) {
     throw error
   }
   return addPost({ title, content, author })
+}
+
+export async function fetchPostByIdApi(id) {
+  await new Promise((r) => setTimeout(r, 300))
+  const post = getPostById(id)
+  if (!post) {
+    const error = new Error('Post não encontrado')
+    error.status = 404
+    throw error
+  }
+  return post
+}
+
+export async function addCommentApi({ postId, author, content }) {
+  await new Promise((r) => setTimeout(r, 300))
+  if (!postId || !author || !content) {
+    const error = new Error('Post, autor e conteúdo são obrigatórios')
+    error.status = 400
+    throw error
+  }
+  return addComment(postId, { author, content })
 }
