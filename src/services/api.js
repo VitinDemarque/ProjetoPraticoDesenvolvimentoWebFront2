@@ -28,3 +28,21 @@ export async function signupApi({ name, email, password }) {
     user: { email, name },
   }
 }
+
+// -------- Posts API (mock) --------
+import { ensureSeedPosts, addPost } from './storage'
+
+export async function fetchPostsApi() {
+  await new Promise((r) => setTimeout(r, 400))
+  return ensureSeedPosts()
+}
+
+export async function createPostApi({ title, content, author }) {
+  await new Promise((r) => setTimeout(r, 300))
+  if (!title || !content || !author) {
+    const error = new Error('Título, conteúdo e autor são obrigatórios')
+    error.status = 400
+    throw error
+  }
+  return addPost({ title, content, author })
+}
