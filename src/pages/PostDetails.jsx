@@ -1,15 +1,30 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import useProtectedPage from '../hooks/useProtectedPage'
 import { getUser } from '../services/storage'
 import { useGlobalState } from '../context/GlobalState.jsx'
+import useForm from '../hooks/useForm'
 
 export default function PostDetails() {
   useProtectedPage()
   const { id } = useParams()
   const currentUser = getUser()
-  const [comment, setComment] = useState('')
-  const [error, setError] = useState('')
+  const { values, errors, handleChange, handleSubmit, submitting, setErrors, reset } = useForm({
+    initialValues: { comment: '' },
+    validate: (v) => {
+      const e = {}
+      if (!v.comment?.trim()) e.comment = 'Digite um comentário.'
+      return e
+    },
+    onSubmit: async (v) => {
+      try {
+        await addComment({ postId: id, author: currentUser.name || currentUser.email, content: v.comment.trim() })
+        reset()
+      } catch (err) {
+        setErrors((prev) => ({ ...prev, form: err?.message || 'Não foi possível adicionar o comentário' }))
+      }
+    },
+  })
   const { currentPost, loadPostById, addComment, loadingPost, addingComment } = useGlobalState()
 
   useEffect(() => {
@@ -22,20 +37,7 @@ export default function PostDetails() {
     })()
   }, [id, loadPostById])
 
-  const onAddComment = async (e) => {
-    e.preventDefault()
-    setError('')
-    if (!comment.trim()) {
-      setError('Digite um comentário.')
-      return
-    }
-    try {
-      await addComment({ postId: id, author: currentUser.name || currentUser.email, content: comment.trim() })
-      setComment('')
-    } catch (err) {
-      setError(err.message || 'Não foi possível adicionar o comentário')
-    }
-  }
+  const onAddComment = handleSubmit
 
   if (!currentPost) {
     return (
@@ -67,21 +69,23 @@ export default function PostDetails() {
       <section className="mt-6 bg-white border rounded-xl p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-gray-900">Comentários</h2>
         <form onSubmit={onAddComment} className="mt-4 space-y-3">
-          {error && <div className="text-sm text-red-600">{error}</div>}
+          {(errors.form) && <div className="text-sm text-red-600">{errors.form}</div>}
           <textarea
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
+            name="comment"
+            value={values.comment}
+            onChange={handleChange}
             rows={3}
             className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
             placeholder="Escreva um comentário"
           />
+          {errors.comment && <div className="text-xs text-red-600">{errors.comment}</div>}
           <div className="flex items-center justify-end">
             <button
               type="submit"
-              disabled={addingComment}
+              disabled={addingComment || submitting}
               className="rounded-md bg-blue-600 text-white px-4 py-2 text-sm hover:bg-blue-700 transition-colors disabled:opacity-60"
             >
-              {addingComment ? 'Enviando...' : 'Comentar'}
+              {addingComment || submitting ? 'Enviando...' : 'Comentar'}
             </button>
           </div>
         </form>

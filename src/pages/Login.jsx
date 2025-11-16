@@ -1,24 +1,33 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
 import { setUser, setToken } from '../services/storage'
 import { loginApi } from '../services/api'
+import useForm from '../hooks/useForm'
+import useRequestData from '../hooks/useRequestData'
 
 export default function Login() {
   const navigate = useNavigate()
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
-    defaultValues: { email: '', password: '' },
+  const { run, loading, error } = useRequestData(loginApi)
+  const { values, errors, handleChange, handleSubmit, submitting, setErrors } = useForm({
+    initialValues: { email: '', password: '' },
+    validate: (v) => {
+      const e = {}
+      if (!v.email) e.email = 'Informe o e-mail'
+      else if (!/.+@.+\..+/.test(v.email)) e.email = 'E-mail inválido'
+      if (!v.password) e.password = 'Informe a senha'
+      else if (v.password.length < 6) e.password = 'Mínimo de 6 caracteres'
+      return e
+    },
+    onSubmit: async (v) => {
+      try {
+        const { token, user } = await run(v)
+        setToken(token)
+        setUser(user)
+        navigate('/feed')
+      } catch (err) {
+        setErrors((prev) => ({ ...prev, form: err?.message || 'Falha no login' }))
+      }
+    },
   })
-
-  const onSubmit = async (data) => {
-    try {
-      const { token, user } = await loginApi(data)
-      setToken(token)
-      setUser(user)
-      navigate('/feed')
-    } catch (err) {
-      alert(err.message || 'Falha no login')
-    }
-  }
 
   return (
     <div className="max-w-md mx-auto mt-12 bg-white border rounded-2xl shadow-lg p-6">
@@ -26,33 +35,40 @@ export default function Login() {
         <h1 className="text-3xl font-bold text-gray-900">Entrar</h1>
         <p className="text-sm text-gray-600 mt-1">Bem-vindo ao DevForum</p>
       </div>
-      <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
+      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+        {(errors.form || error) && (
+          <div className="text-sm text-red-600">{errors.form || error}</div>
+        )}
         <div>
           <label className="block text-sm font-medium text-gray-700">E-mail</label>
           <input
             type="email"
-            {...register('email', { required: 'Informe o e-mail', pattern: { value: /.+@.+\..+/, message: 'E-mail inválido' } })}
+            name="email"
+            value={values.email}
+            onChange={handleChange}
             className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
             placeholder="seu@email.com"
           />
-          {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email.message}</p>}
+          {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">Senha</label>
           <input
             type="password"
-            {...register('password', { required: 'Informe a senha', minLength: { value: 6, message: 'Mínimo de 6 caracteres' } })}
+            name="password"
+            value={values.password}
+            onChange={handleChange}
             className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
             placeholder="••••••••"
           />
-          {errors.password && <p className="text-xs text-red-600 mt-1">{errors.password.message}</p>}
+          {errors.password && <p className="text-xs text-red-600 mt-1">{errors.password}</p>}
         </div>
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={submitting || loading}
           className="w-full rounded-md bg-blue-600 text-white py-2 hover:bg-blue-700 transition-colors disabled:opacity-60"
         >
-          {isSubmitting ? 'Entrando...' : 'Entrar'}
+          {submitting || loading ? 'Entrando...' : 'Entrar'}
         </button>
         <p className="text-sm text-gray-600 text-center">
           Não tem conta?{' '}
