@@ -2,29 +2,21 @@ import { useEffect, useState } from 'react'
 import { getUser } from '../services/storage'
 import PostCard from '../components/PostCard'
 import useProtectedPage from '../hooks/useProtectedPage'
-import { fetchPostsApi, createPostApi } from '../services/api'
+import { useGlobalState } from '../context/GlobalState.jsx'
 
 export default function Feed() {
   useProtectedPage()
   const currentUser = getUser()
-  const [posts, setPosts] = useState([])
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const { posts, loadPosts, createPost, creatingPost, loadingPosts } = useGlobalState()
 
   useEffect(() => {
-    let mounted = true
-    ;(async () => {
-      const initial = await fetchPostsApi()
-      if (mounted) setPosts(initial)
-    })()
-    return () => { mounted = false }
-  }, [])
+    loadPosts()
+  }, [loadPosts])
 
-  const updatePostInState = (updatedPost) => {
-    setPosts((prev) => prev.map((p) => (p.id === updatedPost.id ? updatedPost : p)))
-  }
+  // Posts são atualizados automaticamente pelo contexto.
 
   const submit = async (e) => {
     e.preventDefault()
@@ -34,15 +26,11 @@ export default function Feed() {
       return
     }
     try {
-      setLoading(true)
-      const newPost = await createPostApi({ title, content, author: currentUser.name || currentUser.email })
-      setPosts((prev) => [newPost, ...prev])
+      await createPost({ title, content, author: currentUser.name || currentUser.email })
       setTitle('')
       setContent('')
     } catch (err) {
       setError(err.message || 'Falha ao criar post')
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -75,26 +63,30 @@ export default function Feed() {
           <div className="flex items-center justify-end gap-2">
             <button
               type="submit"
-              disabled={loading}
+              disabled={creatingPost}
               className="rounded-md bg-blue-600 text-white px-4 py-2 text-sm hover:bg-blue-700 transition-colors disabled:opacity-60"
             >
-              {loading ? 'Publicando...' : 'Publicar'}
+              {creatingPost ? 'Publicando...' : 'Publicar'}
             </button>
           </div>
         </form>
       </div>
       <div className="space-y-4">
-        {posts.length === 0 && (
+        {loadingPosts && (
+          <div className="text-center text-gray-600 bg-white border rounded-xl p-8 shadow-sm">
+            Carregando posts...
+          </div>
+        )}
+        {!loadingPosts && posts.length === 0 && (
           <div className="text-center text-gray-600 bg-white border rounded-xl p-8 shadow-sm">
             Nenhum post ainda. Crie o primeiro!
           </div>
         )}
-        {posts.map((post) => (
+        {!loadingPosts && posts.map((post) => (
           <PostCard
             key={post.id}
             post={post}
             currentUser={currentUser}
-            onChange={updatePostInState}
           />
         ))}
       </div>

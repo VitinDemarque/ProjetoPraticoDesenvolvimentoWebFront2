@@ -1,15 +1,14 @@
-import { toggleVote } from '../services/storage'
 import { Link } from 'react-router-dom'
+import { useGlobalState } from '../context/GlobalState.jsx'
 
-export default function PostCard({ post, currentUser, onChange }) {
+export default function PostCard({ post, currentUser }) {
+  const { toggleVote } = useGlobalState()
   const onLike = () => {
-    const updated = toggleVote(post.id, currentUser.email, 'like')
-    onChange(updated)
+    toggleVote(post.id, currentUser.email, 'like')
   }
 
   const onDislike = () => {
-    const updated = toggleVote(post.id, currentUser.email, 'dislike')
-    onChange(updated)
+    toggleVote(post.id, currentUser.email, 'dislike')
   }
 
   return (

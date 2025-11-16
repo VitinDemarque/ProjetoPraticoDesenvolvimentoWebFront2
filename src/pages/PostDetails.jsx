@@ -1,30 +1,26 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import useProtectedPage from '../hooks/useProtectedPage'
-import { fetchPostByIdApi, addCommentApi } from '../services/api'
 import { getUser } from '../services/storage'
+import { useGlobalState } from '../context/GlobalState.jsx'
 
 export default function PostDetails() {
   useProtectedPage()
   const { id } = useParams()
   const currentUser = getUser()
-  const [post, setPost] = useState(null)
   const [comment, setComment] = useState('')
-  const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const { currentPost, loadPostById, addComment, loadingPost, addingComment } = useGlobalState()
 
   useEffect(() => {
-    let mounted = true
     ;(async () => {
       try {
-        const data = await fetchPostByIdApi(id)
-        if (mounted) setPost(data)
+        await loadPostById(id)
       } catch (err) {
         setError(err.message || 'Falha ao carregar post')
       }
     })()
-    return () => { mounted = false }
-  }, [id])
+  }, [id, loadPostById])
 
   const onAddComment = async (e) => {
     e.preventDefault()
@@ -34,18 +30,14 @@ export default function PostDetails() {
       return
     }
     try {
-      setLoading(true)
-      const updated = await addCommentApi({ postId: id, author: currentUser.name || currentUser.email, content: comment.trim() })
-      setPost(updated)
+      await addComment({ postId: id, author: currentUser.name || currentUser.email, content: comment.trim() })
       setComment('')
     } catch (err) {
       setError(err.message || 'Não foi possível adicionar o comentário')
-    } finally {
-      setLoading(false)
     }
   }
 
-  if (!post) {
+  if (!currentPost) {
     return (
       <div className="max-w-2xl mx-auto">
         <div className="bg-white border rounded-xl p-6 shadow-sm">
@@ -53,7 +45,7 @@ export default function PostDetails() {
           {error ? (
             <p className="mt-2 text-red-600 text-sm">{error}</p>
           ) : (
-            <p className="mt-2 text-gray-600 text-sm">Carregando...</p>
+            <p className="mt-2 text-gray-600 text-sm">{loadingPost ? 'Carregando...' : 'Post não encontrado.'}</p>
           )}
           <div className="mt-4">
             <Link to="/feed" className="text-blue-600 hover:underline">Voltar ao Feed</Link>
@@ -66,10 +58,10 @@ export default function PostDetails() {
   return (
     <div className="max-w-2xl mx-auto">
       <article className="bg-white border rounded-xl p-6 shadow-sm">
-        <h1 className="text-2xl font-bold text-gray-900">{post.title}</h1>
-        <p className="mt-1 text-sm text-gray-600">por {post.author}</p>
-        <p className="mt-4 text-gray-800 whitespace-pre-line">{post.content}</p>
-        <div className="mt-4 text-sm text-gray-600">Curtidas: {post.likes} • Não curtidas: {post.dislikes}</div>
+        <h1 className="text-2xl font-bold text-gray-900">{currentPost.title}</h1>
+        <p className="mt-1 text-sm text-gray-600">por {currentPost.author}</p>
+        <p className="mt-4 text-gray-800 whitespace-pre-line">{currentPost.content}</p>
+        <div className="mt-4 text-sm text-gray-600">Curtidas: {currentPost.likes} • Não curtidas: {currentPost.dislikes}</div>
       </article>
 
       <section className="mt-6 bg-white border rounded-xl p-6 shadow-sm">
@@ -86,17 +78,17 @@ export default function PostDetails() {
           <div className="flex items-center justify-end">
             <button
               type="submit"
-              disabled={loading}
+              disabled={addingComment}
               className="rounded-md bg-blue-600 text-white px-4 py-2 text-sm hover:bg-blue-700 transition-colors disabled:opacity-60"
             >
-              {loading ? 'Enviando...' : 'Comentar'}
+              {addingComment ? 'Enviando...' : 'Comentar'}
             </button>
           </div>
         </form>
 
         <div className="mt-6 space-y-4">
-          {Array.isArray(post.comments) && post.comments.length > 0 ? (
-            post.comments.map((c) => (
+          {Array.isArray(currentPost.comments) && currentPost.comments.length > 0 ? (
+            currentPost.comments.map((c) => (
               <div key={c.id} className="border rounded-md p-3">
                 <div className="text-sm text-gray-600">{c.author}</div>
                 <div className="mt-1 text-gray-800 whitespace-pre-line">{c.content}</div>
