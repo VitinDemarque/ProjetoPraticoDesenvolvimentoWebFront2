@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { setUser } from '../services/storage'
+import { setUser, setToken } from '../services/storage'
+import { signupApi } from '../services/api'
 
 export default function Signup() {
   const navigate = useNavigate()
@@ -8,15 +9,26 @@ export default function Signup() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault()
+    setError('')
     if (!name || !email || !password) {
       setError('Preencha nome, e-mail e senha.')
       return
     }
-    setUser({ email, name })
-    navigate('/feed')
+    try {
+      setLoading(true)
+      const { token, user } = await signupApi({ name, email, password })
+      setToken(token)
+      setUser(user)
+      navigate('/feed')
+    } catch (err) {
+      setError(err.message || 'Falha no cadastro')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -59,9 +71,10 @@ export default function Signup() {
         </div>
         <button
           type="submit"
-          className="w-full rounded-md bg-blue-600 text-white py-2 hover:bg-blue-700 transition-colors"
+          disabled={loading}
+          className="w-full rounded-md bg-blue-600 text-white py-2 hover:bg-blue-700 transition-colors disabled:opacity-60"
         >
-          Criar conta
+          {loading ? 'Criando...' : 'Criar conta'}
         </button>
       </form>
     </div>
