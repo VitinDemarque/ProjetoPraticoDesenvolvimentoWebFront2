@@ -99,6 +99,20 @@ export function getPostById(postId) {
   return posts.find((p) => p.id === postId) || null
 }
 
+export function updatePost(postId, { title, content }) {
+  const posts = getPosts()
+  const updated = posts.map((p) => (p.id === postId ? { ...p, title, content } : p))
+  savePosts(updated)
+  return updated.find((p) => p.id === postId)
+}
+
+export function deletePost(postId) {
+  const posts = getPosts()
+  const filtered = posts.filter((p) => p.id !== postId)
+  savePosts(filtered)
+  return true
+}
+
 export function addComment(postId, { author, content }) {
   const posts = getPosts()
   const updated = posts.map((p) => {

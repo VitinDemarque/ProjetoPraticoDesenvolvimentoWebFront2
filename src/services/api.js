@@ -30,7 +30,7 @@ export async function signupApi({ name, email, password }) {
 }
 
 // -------- Posts API (mock) --------
-import { ensureSeedPosts, addPost, getPostById, addComment } from './storage'
+import { ensureSeedPosts, addPost, getPostById, addComment, updatePost, deletePost } from './storage'
 
 export async function fetchPostsApi() {
   await new Promise((r) => setTimeout(r, 400))
@@ -66,4 +66,31 @@ export async function addCommentApi({ postId, author, content }) {
     throw error
   }
   return addComment(postId, { author, content })
+}
+
+export async function updatePostApi({ postId, title, content }) {
+  await new Promise((r) => setTimeout(r, 300))
+  if (!postId || !title || !content) {
+    const error = new Error('Post, título e conteúdo são obrigatórios')
+    error.status = 400
+    throw error
+  }
+  const updated = updatePost(postId, { title, content })
+  if (!updated) {
+    const error = new Error('Post não encontrado')
+    error.status = 404
+    throw error
+  }
+  return updated
+}
+
+export async function deletePostApi({ postId }) {
+  await new Promise((r) => setTimeout(r, 300))
+  if (!postId) {
+    const error = new Error('Post inválido')
+    error.status = 400
+    throw error
+  }
+  deletePost(postId)
+  return { ok: true }
 }

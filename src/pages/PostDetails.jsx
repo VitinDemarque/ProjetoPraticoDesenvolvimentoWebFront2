@@ -1,13 +1,48 @@
-import { useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import useProtectedPage from '../hooks/useProtectedPage'
 import { getUser } from '../services/storage'
 import { useGlobalState } from '../context/GlobalState.jsx'
 import useForm from '../hooks/useForm'
 
+function MoreMenu({ onEdit, onDelete, deleting }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="px-3 py-1.5 text-sm rounded-md bg-gray-200 text-gray-900 hover:bg-gray-300 transition-colors"
+        title="Mais opções"
+        aria-haspopup="menu"
+        aria-expanded={open ? 'true' : 'false'}
+      >
+        ...
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-2 w-36 bg-white border rounded-md shadow-lg z-10">
+          <button
+            onClick={() => { setOpen(false); onEdit?.() }}
+            className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
+          >
+            Editar
+          </button>
+          <button
+            onClick={async () => { setOpen(false); await onDelete?.() }}
+            disabled={deleting}
+            className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 disabled:opacity-60"
+          >
+            {deleting ? 'Excluindo...' : 'Excluir'}
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function PostDetails() {
   useProtectedPage()
   const { id } = useParams()
+  const navigate = useNavigate()
   const currentUser = getUser()
   const { values, errors, handleChange, handleSubmit, submitting, setErrors, reset } = useForm({
     initialValues: { comment: '' },
@@ -25,7 +60,7 @@ export default function PostDetails() {
       }
     },
   })
-  const { currentPost, loadPostById, addComment, loadingPost, addingComment } = useGlobalState()
+  const { currentPost, loadPostById, addComment, loadingPost, addingComment, updatePost, deletePost, updatingPost, deletingPost } = useGlobalState()
 
   useEffect(() => {
     ;(async () => {
@@ -38,6 +73,29 @@ export default function PostDetails() {
       }
     })()
   }, [id, loadPostById, currentPost])
+
+  const isAuthor = currentUser?.email && (currentPost?.author === currentUser.name || currentPost?.author === currentUser.email)
+  const [editing, setEditing] = useState(false)
+  const editForm = useForm({
+    initialValues: { title: currentPost?.title || '', content: currentPost?.content || '' },
+    validate: (v) => {
+      const e = {}
+      if (!v.title) e.title = 'Informe o título'
+      if (!v.content) e.content = 'Informe o conteúdo'
+      return e
+    },
+    onSubmit: async (v) => {
+      await updatePost({ postId: currentPost.id, title: v.title, content: v.content })
+      setEditing(false)
+    },
+  })
+
+  useEffect(() => {
+    if (currentPost) {
+      editForm.setValue('title', currentPost.title)
+      editForm.setValue('content', currentPost.content)
+    }
+  }, [currentPost])
 
   const onAddComment = handleSubmit
 
@@ -62,10 +120,51 @@ export default function PostDetails() {
   return (
     <div className="max-w-2xl mx-auto">
       <article className="bg-white border rounded-xl p-6 shadow-sm">
-        <h1 className="text-2xl font-bold text-gray-900">{currentPost.title}</h1>
-        <p className="mt-1 text-sm text-gray-600">por {currentPost.author}</p>
-        <p className="mt-4 text-gray-800 whitespace-pre-line">{currentPost.content}</p>
-        <div className="mt-4 text-sm text-gray-600">Curtidas: {currentPost.likes} • Não curtidas: {currentPost.dislikes}</div>
+        {editing ? (
+          <form onSubmit={editForm.handleSubmit} className="space-y-3">
+            <input
+              type="text"
+              name="title"
+              value={editForm.values.title}
+              onChange={editForm.handleChange}
+              className="w-full rounded-md border border-gray-300 px-3 py-2"
+            />
+            {editForm.errors.title && <p className="text-xs text-red-600">{editForm.errors.title}</p>}
+            <textarea
+              name="content"
+              value={editForm.values.content}
+              onChange={editForm.handleChange}
+              rows={5}
+              className="w-full rounded-md border border-gray-300 px-3 py-2"
+            />
+            {editForm.errors.content && <p className="text-xs text-red-600">{editForm.errors.content}</p>}
+            <div className="flex gap-2 justify-end">
+              <button type="button" onClick={() => { editForm.reset(); setEditing(false) }} className="px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-800 hover:bg-gray-200">Cancelar</button>
+              <button type="submit" disabled={updatingPost || editForm.submitting} className="px-3 py-1.5 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60">{updatingPost || editForm.submitting ? 'Salvando...' : 'Salvar'}</button>
+            </div>
+          </form>
+        ) : (
+          <>
+            <h1 className="text-2xl font-bold text-gray-900">{currentPost.title}</h1>
+            <p className="mt-1 text-sm text-gray-600">por {currentPost.author}</p>
+            <p className="mt-4 text-gray-800 whitespace-pre-line">{currentPost.content}</p>
+            <div className="mt-4 text-sm text-gray-600">Curtidas: {currentPost.likes} • Não curtidas: {currentPost.dislikes}</div>
+          </>
+        )}
+        {isAuthor && !editing && (
+          <div className="mt-4 flex justify-end relative">
+            <MoreMenu
+              onEdit={() => setEditing(true)}
+              onDelete={async () => {
+                if (window.confirm('Deseja realmente excluir este post?')) {
+                  await deletePost({ postId: currentPost.id })
+                  navigate('/feed')
+                }
+              }}
+              deleting={deletingPost}
+            />
+          </div>
+        )}
       </article>
 
       <section className="mt-6 bg-white border rounded-xl p-6 shadow-sm">
