@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import useProtectedPage from '../hooks/useProtectedPage'
 import { getUser } from '../services/storage'
 import { useGlobalState } from '../context/GlobalState.jsx'
 import useForm from '../hooks/useForm'
+import ConfirmDialog from '../components/ConfirmDialog.jsx'
 
 function MoreMenu({ onEdit, onDelete, deleting }) {
   const [open, setOpen] = useState(false)
@@ -77,6 +78,7 @@ export default function PostDetails() {
 
   const isAuthor = currentUser?.email && (currentPost?.author === currentUser.name || currentPost?.author === currentUser.email)
   const [editing, setEditing] = useState(false)
+  const [confirmOpen, setConfirmOpen] = useState(false)
   const editForm = useForm({
     initialValues: { title: currentPost?.title || '', content: currentPost?.content || '' },
     validate: (v) => {
@@ -120,6 +122,17 @@ export default function PostDetails() {
 
   return (
     <div className="max-w-2xl mx-auto">
+      <div className="mb-4 flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => navigate('/feed')}
+          className="inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-800 hover:bg-gray-200"
+        >
+          <span className="text-lg">←</span>
+          Voltar
+        </button>
+        <h2 className="text-sm text-gray-600">Detalhes do Post</h2>
+      </div>
       <article className="bg-white border rounded-xl p-6 shadow-sm">
         {editing ? (
           <form onSubmit={editForm.handleSubmit} className="space-y-3">
@@ -156,17 +169,23 @@ export default function PostDetails() {
           <div className="mt-4 flex justify-end relative">
             <MoreMenu
               onEdit={() => setEditing(true)}
-              onDelete={async () => {
-                if (window.confirm('Deseja realmente excluir este post?')) {
-                  await deletePost({ postId: currentPost.id })
-                  navigate('/feed')
-                }
-              }}
+              onDelete={() => setConfirmOpen(true)}
               deleting={deletingPost}
             />
           </div>
         )}
       </article>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Excluir post"
+        message="Tem certeza que deseja excluir este post?"
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        loading={deletingPost}
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={async () => { await deletePost({ postId: currentPost.id }); setConfirmOpen(false); navigate('/feed') }}
+      />
 
       <section className="mt-6 bg-white border rounded-xl p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-gray-900">Comentários</h2>
@@ -205,10 +224,6 @@ export default function PostDetails() {
           )}
         </div>
       </section>
-
-      <div className="mt-4">
-        <Link to="/feed" className="text-blue-600 hover:underline">Voltar ao Feed</Link>
-      </div>
     </div>
   )
 }

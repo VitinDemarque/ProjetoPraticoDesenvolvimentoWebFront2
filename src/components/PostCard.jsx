@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useState } from 'react'
 import { useGlobalState } from '../context/GlobalState.jsx'
 import useForm from '../hooks/useForm'
+import ConfirmDialog from './ConfirmDialog.jsx'
 
 export default function PostCard({ post, currentUser }) {
   const { toggleVote, updatePost, deletePost, updatingPost, deletingPost } = useGlobalState()
@@ -28,9 +29,8 @@ export default function PostCard({ post, currentUser }) {
     toggleVote(post.id, currentUser.email, 'dislike')
   }
 
+  const [confirmOpen, setConfirmOpen] = useState(false)
   const onDelete = async () => {
-    const ok = window.confirm('Deseja realmente excluir este post?')
-    if (!ok) return
     await deletePost({ postId: post.id })
   }
 
@@ -120,7 +120,7 @@ export default function PostCard({ post, currentUser }) {
                     Editar
                   </button>
                   <button
-                    onClick={async () => { setMenuOpen(false); await onDelete() }}
+                    onClick={() => { setMenuOpen(false); setConfirmOpen(true) }}
                     disabled={deletingPost}
                     className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 disabled:opacity-60"
                   >
@@ -132,6 +132,16 @@ export default function PostCard({ post, currentUser }) {
           )}
         </div>
       </div>
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Excluir post"
+        message="Tem certeza que deseja excluir este post?"
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        loading={deletingPost}
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={async () => { await onDelete(); setConfirmOpen(false) }}
+      />
     </article>
   )
 }

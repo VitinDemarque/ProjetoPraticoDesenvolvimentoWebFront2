@@ -23,6 +23,17 @@ export default function NewPost() {
 
   return (
     <div className="max-w-2xl mx-auto">
+      <div className="mb-4 flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => navigate('/feed')}
+          className="inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-800 hover:bg-gray-200"
+        >
+          <span className="text-lg">←</span>
+          Voltar
+        </button>
+        <h2 className="text-sm text-gray-600">Novo Post</h2>
+      </div>
       <div className="bg-white border rounded-2xl shadow-lg p-6">
         <h1 className="text-2xl font-bold text-gray-900">Novo Post</h1>
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
