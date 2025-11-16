@@ -44,6 +44,7 @@ export default function PostDetails() {
   const { id } = useParams()
   const navigate = useNavigate()
   const currentUser = getUser()
+  const [error, setError] = useState('')
   const { values, errors, handleChange, handleSubmit, submitting, setErrors, reset } = useForm({
     initialValues: { comment: '' },
     validate: (v) => {
